@@ -1,5 +1,7 @@
 module NeuroSpider.Util.Gtk where
 
+import Paths_NeuroSpider
+
 import Control.Monad.IO.Class
 import Graphics.UI.Gtk
 
@@ -19,7 +21,7 @@ instance FromBuilder ScrolledWindow where castTo = castToScrolledWindow
 withBuilder :: FilePath -> (Builder -> IO a) -> IO Window
 withBuilder bFile action = do
   builder <- builderNew
-  builderAddFromFile builder bFile
+  builderAddFromFile builder =<< getDataFileName bFile
   window <- builderGetObject builder castToWindow "window1"
   _ <- action builder
   return window
