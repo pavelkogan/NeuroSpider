@@ -1,0 +1,1 @@
+sudo apt-get install haskell-platform libghc-gtk-dev libghc-webkit-dev
