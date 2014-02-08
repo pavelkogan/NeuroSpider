@@ -26,10 +26,10 @@ withBuilder bFile action = do
 
 doGUI :: IO Window -> IO ()
 doGUI action = do
-  initGUI
+  _ <- initGUI
   window <- action
   widgetShowAll window
-  on window deleteEvent $ perform mainQuit
+  _ <- on window deleteEvent $ perform mainQuit
   mainGUI
 
 perform :: MonadIO m => IO a -> m Bool
