@@ -6,11 +6,11 @@ maintainer:          pkogan@gmail.com
 build-type:          Simple
 cabal-version:       >=1.10
 data-dir:            data
-data-files:          *.glade
+data-files:          *.glade *.css
 
 executable NeuroSpider
   main-is:             Main.hs
-  other-extensions:
+  other-extensions:    OverloadedStrings
   other-modules:       Paths_NeuroSpider
                        NeuroSpider.Gui
                        NeuroSpider.Util.GraphViz
@@ -24,6 +24,9 @@ executable NeuroSpider
                        text,
                        strict,
                        graphviz,
+                       conduit,
+                       xml-conduit,
+                       xml-types,
                        reactive-banana
   hs-source-dirs:      src
   ghc-options:         -O2 -Wall

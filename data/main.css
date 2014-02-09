@@ -1,0 +1,7 @@
+ellipse {
+	fill:grey;
+	fill-opacity:0.5;
+}
+g.node:hover ellipse{
+	fill-opacity:1;
+}
