@@ -1,10 +1,13 @@
 module NeuroSpider.Util.GraphViz where
 
+import Control.Monad
 import Data.GraphViz
-import Data.Text.Lazy (Text)
+import Data.String
 import System.IO.Strict (hGetContents)
 
-dotToSvg :: Text -> IO String
-dotToSvg t = graphvizWithHandle Dot d Svg hGetContents
-  where d = parseDotGraph t :: DotGraph String
+dotToSvg :: IsString s => String -> IO s
+dotToSvg t = graphvizWithHandle Dot d Svg get
+  where
+    d   = parseDotGraph $ fromString t :: DotGraph String
+    get = return.fromString <=< hGetContents
 
