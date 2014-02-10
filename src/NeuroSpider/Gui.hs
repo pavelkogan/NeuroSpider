@@ -6,6 +6,7 @@ import Paths_NeuroSpider
 
 import NeuroSpider.Util.Gtk
 import NeuroSpider.Util.GraphViz
+import NeuroSpider.Util.XML
 --import NeuroSpider.Util.Reactive
 --import NeuroSpider.Util.ReactiveGtk
 
@@ -42,9 +43,8 @@ augmentSvg i = liftM mconcat $
 
 addCss :: Event -> IO [Event]
 addCss e@(EventBeginElement (Name "svg" _ _) _) = do
-  let begin = EventBeginElement "{http://www.w3.org/2000/svg}style"
-                                [("type", [ContentText "text/css"])]
-      end   = EventEndElement "style"
-  css <- liftM EventCDATA $ T.readFile =<< getDataFileName "main.css"
-  return [e, begin, css, end]
+  css <- T.readFile =<< getDataFileName "main.css"
+  es <- xmlEvents $ svgStyle css
+  return $ e:es
 addCss e = return [e]
+

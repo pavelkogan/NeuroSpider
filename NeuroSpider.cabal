@@ -17,6 +17,7 @@ executable NeuroSpider
                        NeuroSpider.Util.Gtk
                        NeuroSpider.Util.Reactive
                        NeuroSpider.Util.ReactiveGtk
+                       NeuroSpider.Util.XML
   build-depends:       base >=4.6 && <4.7,
                        gtk >=0.12 && <0.13,
                        webkit >=0.12 && <0.13,
@@ -26,6 +27,7 @@ executable NeuroSpider
                        graphviz,
                        conduit,
                        xml-conduit,
+                       xml-conduit-writer,
                        xml-types,
                        reactive-banana
   hs-source-dirs:      src
