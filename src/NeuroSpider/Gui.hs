@@ -44,7 +44,6 @@ augmentSvg i = liftM mconcat $
 addCss :: Event -> IO [Event]
 addCss e@(EventBeginElement (Name "svg" _ _) _) = do
   css <- T.readFile =<< getDataFileName "main.css"
-  es <- xmlEvents $ svgStyle css
-  return $ e:es
+  return $ e : (xmlEvents $ svgStyle css)
 addCss e = return [e]
 
