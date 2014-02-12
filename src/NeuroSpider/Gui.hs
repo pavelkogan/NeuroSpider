@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module NeuroSpider.Gui where
 
@@ -10,17 +11,11 @@ import NeuroSpider.Util.XML
 --import NeuroSpider.Util.Reactive
 --import NeuroSpider.Util.ReactiveGtk
 
-import Control.Monad
-import Data.Conduit
-import Data.Monoid
-import Data.Text
-import Data.XML.Types
+import Data.Text.Lazy
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.WebKit.WebView
-import Text.XML.Stream.Parse
-import Text.XML.Stream.Render
-import qualified Data.Conduit.List as CL
-import qualified Data.Text.IO as T
+import Text.XML hiding (readFile)
+import qualified Data.Text.Lazy.IO as T
 
 runGUI :: IO ()
 runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
@@ -30,20 +25,19 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
   set sw [ containerChild := wv ]
   on e entryActivate $ do
     xml <- (dotToSvg =<< readFile =<< entryGetText e) :: IO Text
-    svg <- augmentSvg xml
+    css <- T.readFile =<< getDataFileName "main.css"
+    let svg = renderText def $ transformSvg (parseText_ def xml) css
     webViewLoadString wv (unpack svg) (Just "image/svg+xml") Nothing ""
 
-augmentSvg :: Text -> IO Text
-augmentSvg i = liftM mconcat $
-     yield i
-  $$ parseText def
-  =$ CL.concatMapM (addCss . snd)
-  =$ renderText def
-  =$ CL.consume
-
-addCss :: Event -> IO [Event]
-addCss e@(EventBeginElement (Name "svg" _ _) _) = do
-  css <- T.readFile =<< getDataFileName "main.css"
-  return $ e : (xmlEvents $ svgStyle css)
-addCss e = return [e]
+transformSvg :: Document -> Text -> Document
+transformSvg d@(Document{..}) css = d{documentRoot = documentRoot'}
+  where
+    documentRoot' = goElem documentRoot
+    goElem e@(Element{..}) = case elementName of
+      Name{nameLocalName = "svg",..} -> e{elementNodes = style++nodes}
+      _                              -> e{elementNodes = nodes}
+      where style = svgStyle css
+            nodes = fmap goNode elementNodes
+    goNode (NodeElement e) = NodeElement $ goElem e
+    goNode n               = n
 

@@ -2,30 +2,14 @@
 
 module NeuroSpider.Util.XML where
 
-import Data.Maybe
-import Data.Text (Text)
-import Data.XML.Types (Event(..))
+import Data.Text.Lazy
 import Text.XML
-import Text.XML.Unresolved
 import Text.XML.Writer
+import qualified Data.Text as S
 
-svgStyle :: Text -> XML
-svgStyle = elementA "{http://www.w3.org/2000/svg}style"
-                    [("type", "text/css")]
-                    . content
+svgStyle :: Text -> [Node]
+svgStyle = elem' "{http://www.w3.org/2000/svg}style" [("type","text/css")]
 
-xmlEvents :: XML -> [Event]
-xmlEvents = concatMap elementToEvents . mapMaybe nodeElement . render
-
-nodeElement :: Node -> Maybe Element
-nodeElement (NodeElement e) = Just e
-nodeElement _               = Nothing
-
-elementToEvents :: Element -> [Event]
-elementToEvents = filter (not . docEvent) . toEvents . toDoc
-  where
-    toDoc e = toXMLDocument $ Document (Prologue def def def) e def
-    docEvent EventBeginDocument = True
-    docEvent EventEndDocument   = True
-    docEvent _                  = False
+elem' :: Name -> [(Name, S.Text)] -> Text -> [Node]
+elem' t as = render . elementA t as . content . toStrict
 
