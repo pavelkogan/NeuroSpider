@@ -11,6 +11,7 @@ import NeuroSpider.Util.XML
 --import NeuroSpider.Util.Reactive
 --import NeuroSpider.Util.ReactiveGtk
 
+import Data.Map
 import Data.Text.Lazy
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.WebKit.WebView
@@ -26,18 +27,25 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
   on e entryActivate $ do
     xml <- (dotToSvg =<< readFile =<< entryGetText e) :: IO Text
     css <- T.readFile =<< getDataFileName "main.css"
-    let svg = renderText def $ transformSvg (parseText_ def xml) css
+    js <- T.readFile =<< getDataFileName "main.js"
+    let svg = renderText def $ transformSvg (parseText_ def xml) css js
     webViewLoadString wv (unpack svg) (Just "image/svg+xml") Nothing ""
 
-transformSvg :: Document -> Text -> Document
-transformSvg d@(Document{..}) css = d{documentRoot = documentRoot'}
+transformSvg :: Document -> Text -> Text -> Document
+transformSvg d@(Document{..}) css js = d{documentRoot = documentRoot'}
   where
     documentRoot' = goElem documentRoot
     goElem e@(Element{..}) = case elementName of
-      Name{nameLocalName = "svg",..} -> e{elementNodes = style++nodes}
+      Name{nameLocalName = "svg",..} -> e{elementNodes = script++style++nodes}
+      Name{nameLocalName = "g"  ,..} ->
+        let newAttrs = addClick elementAttributes
+        in  e{elementNodes = nodes, elementAttributes = newAttrs}
       _                              -> e{elementNodes = nodes}
-      where style = svgStyle css
-            nodes = fmap goNode elementNodes
+      where nodes  = fmap goNode elementNodes
+            style  = svgNodes "style"  css
+            script = svgNodes "script" js
     goNode (NodeElement e) = NodeElement $ goElem e
     goNode n               = n
+    addClick attrs = if isSubmapOf (fromList [("class","node")]) attrs
+      then insert "onclick" "clickHandler(this)" attrs else attrs
 

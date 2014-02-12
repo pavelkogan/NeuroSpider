@@ -6,7 +6,7 @@ maintainer:          pkogan@gmail.com
 build-type:          Simple
 cabal-version:       >=1.10
 data-dir:            data
-data-files:          *.glade *.css
+data-files:          *.glade *.css *.js
 
 executable NeuroSpider
   main-is:             Main.hs
