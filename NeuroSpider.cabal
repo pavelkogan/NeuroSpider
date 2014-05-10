@@ -24,6 +24,7 @@ executable NeuroSpider
                        webkit >=0.12 && <0.13,
                        transformers >=0.3 && <0.4,
                        containers,
+                       fgl,
                        text,
                        strict,
                        graphviz,

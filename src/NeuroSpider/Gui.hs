@@ -10,6 +10,8 @@ import NeuroSpider.Util.GraphViz
 import NeuroSpider.Util.XML
 --import NeuroSpider.Util.Reactive
 --import NeuroSpider.Util.ReactiveGtk
+import Data.Graph.Inductive.Example (vor)
+--import Data.String
 
 import Data.Map
 import Data.Text.Lazy
@@ -25,7 +27,9 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
   wv <- webViewNew
   set sw [ containerChild := wv ]
   on e entryActivate $ do
-    xml <- (dotToSvg =<< readFile =<< entryGetText e) :: IO Text
+    --xml <- (dotStringToSvg =<< readFile =<< entryGetText e) :: IO Text
+    --xml <- (return.fromString =<< readFile =<< entryGetText e) :: IO Text
+    xml <- graphToSvg vor :: IO Text
     css <- T.readFile =<< getDataFileName "main.css"
     js <- T.readFile =<< getDataFileName "main.js"
     let svg = renderText def $ transformSvg (parseText_ def xml) css js
