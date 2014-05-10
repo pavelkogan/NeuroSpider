@@ -1,4 +1,5 @@
 function clickHandler (owner) {
-    alert(owner.id);
+    title = owner.getElementsByTagName("title")[0].textContent;
+    location.href = "click:" + title;
 }
 

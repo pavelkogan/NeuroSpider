@@ -13,10 +13,12 @@ import NeuroSpider.Util.XML
 import Data.Graph.Inductive.Example (vor)
 --import Data.String
 
+import Prelude hiding (lookup)
 import Data.Map
-import Data.Text.Lazy
+import Data.Text.Lazy hiding (any)
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.WebKit.WebView
+import Graphics.UI.Gtk.WebKit.NetworkRequest
 import Text.XML hiding (readFile)
 import qualified Data.Text.Lazy.IO as T
 
@@ -26,6 +28,9 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
   e <- getFrom builder "entry1" :: IO Entry
   wv <- webViewNew
   set sw [ containerChild := wv ]
+  on wv navigationPolicyDecisionRequested $ \_ request _ _ -> do
+    uri <- networkRequestGetUri request
+    maybe (return False) (\u -> putStrLn u >> return True) uri
   on e entryActivate $ do
     --xml <- (dotStringToSvg =<< readFile =<< entryGetText e) :: IO Text
     --xml <- (return.fromString =<< readFile =<< entryGetText e) :: IO Text
@@ -50,6 +55,8 @@ transformSvg d@(Document{..}) css js = d{documentRoot = documentRoot'}
             script = svgNodes "script" js
     goNode (NodeElement e) = NodeElement $ goElem e
     goNode n               = n
-    addClick attrs = if isSubmapOf (fromList [("class","node")]) attrs
-      then insert "onclick" "clickHandler(this)" attrs else attrs
-
+    addClick attrs = case lookup "class" attrs of
+      Just a  -> if any (==a) ["node", "edge"]
+                   then insert "onclick" "clickHandler(this)" attrs
+                   else attrs
+      Nothing -> attrs
