@@ -1,5 +1,6 @@
 name:                NeuroSpider
 version:             0
+license:             BSD3
 license-file:        LICENSE
 author:              Pavel Kogan
 maintainer:          pkogan@gmail.com
