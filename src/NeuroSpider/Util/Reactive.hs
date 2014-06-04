@@ -1,3 +1,5 @@
+{-# LANGUAGE RankNTypes #-}
+
 module NeuroSpider.Util.Reactive where
 
 import Control.Monad
@@ -12,3 +14,5 @@ newAddHandlers = liftM unzip . flip replicateM newAddHandler
 run :: Moment' () -> IO ()
 run = actuate <=< compile
 
+foldE :: (a -> b -> b) -> b -> Event t a -> Event t b
+foldE f acc = accumE acc . fmap f

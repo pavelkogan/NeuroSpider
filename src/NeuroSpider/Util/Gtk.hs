@@ -16,6 +16,8 @@ instance FromBuilder Button    where castTo = castToButton
 instance FromBuilder Entry     where castTo = castToEntry
 instance FromBuilder Editable  where castTo = castToEditable
 instance FromBuilder Label     where castTo = castToLabel
+instance FromBuilder TextBuffer     where castTo = castToTextBuffer
+instance FromBuilder VButtonBox     where castTo = castToVButtonBox
 instance FromBuilder ScrolledWindow where castTo = castToScrolledWindow
 
 withBuilder :: FilePath -> (Builder -> IO a) -> IO Window
