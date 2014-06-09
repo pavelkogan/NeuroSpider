@@ -7,6 +7,9 @@ module NeuroSpider.Graph where
 import Control.Applicative
 import Data.Default
 import Data.Graph.Inductive.Graph
+import Data.Map (fromList, toList, adjust)
+import Data.Tuple (swap)
+import Safe (readDef)
 import Text.Parsec
 
 type GraphElement = Either Edge Node
@@ -42,3 +45,21 @@ makeEdge _ _ _ = id
 
 delElem :: DynGraph gr => GraphElement -> gr a b -> gr a b
 delElem = either delEdge delNode
+
+labelNode :: DynGraph gr => a -> Node -> gr a b -> gr a b
+labelNode l n g = case match n g of
+  (Nothing, g')            -> g'
+  (Just (i, n', _, o), g') -> (i, n', l, o) & g'
+
+labelEdge :: DynGraph gr => b -> Edge -> gr a b -> gr a b
+labelEdge l (n1,n2) g = case match n1 g of
+  (Nothing, g')             -> g'
+  (Just (i, n', nl, o), g') ->
+    let newOut = adjust (const l) n2 `asMap` o
+    in  (i, n', nl, newOut) & g'
+  where asMap f = map swap . toList . f . fromList . map swap
+
+labelElem :: (DynGraph gr, Read a, Read b, Default a, Default b)
+          => String -> GraphElement -> gr a b -> gr a b
+labelElem l = either (labelEdge $ readDef def l)
+                     (labelNode $ readDef def l)

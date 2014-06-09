@@ -56,10 +56,11 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
     let selects = accumE def $ (\n (s, _) -> (Just n, s)) <$> select
     let select2 = filterJust $ snd <$> selects
     let selected = stepper def select
-    let graph = accumE graphInit $ unions [del, ins]
+    let graph = accumE graphInit $ unions [del, ins, lab]
           where
             del = delElem <$> selected <@ button ! "deleteSelected"
             ins = union createNode createEdge
+            lab = labelElem <$> label <*> selected <@ button ! "renameSelected"
             createNode = insNode <$> ((,) <$> newNode <*> label)
                          <@ button ! "createNode"
             createEdge = makeEdge
@@ -69,7 +70,6 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
                          <@ button ! "createEdge"
             newNode = accumB newNodeStart $ pure (+1) <@ createNode
     reactimate $ loadWv wv <$> graph
-    reactimate $ print <$> label <@ button ! "renameSelected"
     reactimate $ textBufferSetText tb1 . show <$> select
     reactimate $ textBufferSetText tb2 . show <$> select2
   _ <- on wv navigationPolicyDecisionRequested $ \_ request _ _ -> do
