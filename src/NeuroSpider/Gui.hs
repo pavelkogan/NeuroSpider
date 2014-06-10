@@ -10,15 +10,13 @@ import NeuroSpider.Util.Gtk
 import NeuroSpider.Util.GraphViz
 import NeuroSpider.Util.XML
 import NeuroSpider.Util.Reactive
---import NeuroSpider.Util.ReactiveGtk
 import Data.Graph.Inductive.Example (vor)
 import Data.Graph.Inductive.Graph (nodeRange, insNode)
 --import Data.String
 
 import Prelude hiding (lookup, mapM)
-import Control.Monad (forM_)
 import Data.Default
-import Data.Map (Map, (!), fromList, lookup, insert, keys, elems, size)
+import Data.Map (Map, (!), fromList, lookup, insert, elems)
 import Data.Text.Lazy (Text, unpack)
 import Data.Traversable (mapM)
 import Graphics.UI.Gtk
@@ -26,6 +24,7 @@ import Graphics.UI.Gtk.WebKit.WebView
 import Graphics.UI.Gtk.WebKit.NetworkRequest
 import Reactive.Banana
 import Reactive.Banana.Frameworks
+import Reactive.Banana.Gtk
 import Safe (readDef)
 import Text.XML hiding (readFile)
 import qualified Data.Text.Lazy.IO as T
@@ -44,18 +43,20 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
   set sw [ containerChild := wv ]
   buttons <- makeButtons
   mapM_ (containerAdd bb) $ elems buttons
-  (hs, es) <- newAddHandlers $ size buttons
-  (navHandler, navEvent) <- newAddHandler
-  (labelHandler, labelEvent) <- newAddHandler
   run $ do
-    nav <- fromAddHandler navHandler
-    label <- fromChanges def labelHandler
-    button <- fromList . zip (keys buttons) <$> mapM fromAddHandler hs
+    nav <- eventN (\f _ request _ _ -> do
+      uri <- networkRequestGetUri request
+      case uri of
+        Nothing -> return False
+        Just u  -> f u >> return True
+      ) wv navigationPolicyDecisionRequested
+    label <- stepper def <$> monitorAttr e2 editableChanged entryText
+    button <- mapM (flip event0 buttonActivated) buttons
     let (_, click) = split $ parseGraphEvent <$> nav
     let select = gElem <$> click
     let selects = accumE def $ (\n (s, _) -> (Just n, s)) <$> select
-    let select2 = filterJust $ snd <$> selects
     let selected = stepper def select
+    let selected2 = stepper def $ filterJust $ snd <$> selects
     let graph = accumE graphInit $ unions [del, ins, lab]
           where
             del = delElem <$> selected <@ button ! "deleteSelected"
@@ -64,21 +65,14 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
             createNode = insNode <$> ((,) <$> newNode <*> label)
                          <@ button ! "createNode"
             createEdge = makeEdge
-                           <$> stepper def select2
+                           <$> selected2
                            <*> selected
                            <*> fmap (readDef def) label
                          <@ button ! "createEdge"
             newNode = accumB newNodeStart $ pure (+1) <@ createNode
     reactimate $ loadWv wv <$> graph
-    reactimate $ textBufferSetText tb1 . show <$> select
-    reactimate $ textBufferSetText tb2 . show <$> select2
-  _ <- on wv navigationPolicyDecisionRequested $ \_ request _ _ -> do
-    uri <- networkRequestGetUri request
-    case uri of
-      Nothing -> return False
-      Just u  -> navEvent u >> return True
-  _ <- on e2 editableChanged $ labelEvent =<< get e2 entryText
-  forM_ (zip (elems buttons) es) $ \(b, e) -> on b buttonActivated (e ())
+    sink tb1 [textBufferText :== show <$> selected]
+    sink tb2 [textBufferText :== show <$> selected2]
   loadWv wv graphInit
   where
   loadWv wv x = do
