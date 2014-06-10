@@ -29,20 +29,41 @@ import Safe (readDef)
 import Text.XML hiding (readFile)
 import qualified Data.Text.Lazy.IO as T
 
-runGUI :: IO ()
-runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
-  let graphInit = vor
-  let newNodeStart = (+1) . snd . nodeRange $ graphInit
-  sw <- getFrom builder "scrolledwindow1" :: IO ScrolledWindow
-  --[e1,e2] <- getListFrom builder ["entry1","entry2"] :: IO [Entry]
-  e2 <- getFrom builder "entry2" :: IO Entry
-  tb1 <- getFrom builder "textbuffer1" :: IO TextBuffer
-  tb2 <- getFrom builder "textbuffer2" :: IO TextBuffer
-  bb <- getFrom builder "vbuttonbox1" :: IO VButtonBox
+data Widgets = Widgets
+                 Entry
+                 Entry
+                 TextBuffer
+                 TextBuffer
+                 WebView
+                 (Map String Button)
+
+makeButtons :: IO (Map String Button)
+makeButtons = mapM buttonNewWithLabel $ fromList
+  [ ("createNode", "Create Node")
+  , ("createEdge", "Create Edge")
+  , ("deleteSelected", "Delete Selected")
+  , ("renameSelected", "Rename Selected") ]
+
+setUpGUI :: Builder -> IO Widgets
+setUpGUI builder = do
+  widgets <- fromBuilder builder $ Widgets
+    $-> "entry1"
+    *-> "entry2"
+    *-> "textbuffer1"
+    *-> "textbuffer2"
+  sw <- "scrolledwindow1" builder :: IO ScrolledWindow
+  bb <- "vbuttonbox1" builder :: IO VButtonBox
   wv <- webViewNew
   set sw [ containerChild := wv ]
   buttons <- makeButtons
   mapM_ (containerAdd bb) $ elems buttons
+  return $ widgets wv buttons
+
+runGUI :: IO ()
+runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
+  let graphInit = vor
+  let newNodeStart = (+1) . snd . nodeRange $ graphInit
+  Widgets _ e2 tb1 tb2 wv buttons <- setUpGUI builder
   run $ do
     nav <- eventN (\f _ request _ _ -> do
       uri <- networkRequestGetUri request
@@ -81,13 +102,6 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
     js <- T.readFile =<< getDataFileName "main.js"
     let svg = renderText def $ transformSvg (parseText_ def xml) css js
     webViewLoadString wv (unpack svg) (Just "image/svg+xml") Nothing ""
-
-makeButtons :: IO (Map String Button)
-makeButtons = mapM buttonNewWithLabel $ fromList
-  [ ("createNode", "Create Node")
-  , ("createEdge", "Create Edge")
-  , ("deleteSelected", "Delete Selected")
-  , ("renameSelected", "Rename Selected") ]
 
 transformSvg :: Document -> Text -> Text -> Document
 transformSvg d@(Document{..}) css js = d{documentRoot = documentRoot'}
