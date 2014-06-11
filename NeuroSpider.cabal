@@ -11,10 +11,9 @@ data-files:          *.glade *.css *.js
 
 executable NeuroSpider
   main-is:             Main.hs
-  other-extensions:    OverloadedStrings
-                       RecordWildCards
   other-modules:       Paths_NeuroSpider
                        NeuroSpider.Gui
+                       NeuroSpider.Graph
                        NeuroSpider.Util.GraphViz
                        NeuroSpider.Util.Gtk
                        NeuroSpider.Util.Reactive
