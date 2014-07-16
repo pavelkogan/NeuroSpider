@@ -25,10 +25,10 @@ gElem (EdgeClick e) = Left e
 parseGraphEvent :: String -> Either ParseError GraphEvent
 parseGraphEvent s = parse p s s where
   p = string "click:" >> choice'
-        [ node <* eof >>= return . NodeClick
-        , edge >>= return . EdgeClick ]
+        [ NodeClick <$> node <* eof
+        , EdgeClick <$> edge ]
   choice' = choice . map try
-  node = many1 digit >>= return . read
+  node = read <$> many1 digit
   edge = do
     n <- node
     _ <- string "->"

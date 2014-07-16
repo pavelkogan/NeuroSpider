@@ -72,7 +72,7 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
         Just u  -> f u >> return True
       ) wv navigationPolicyDecisionRequested
     label <- stepper def <$> monitorAttr e2 editableChanged entryText
-    button <- mapM (flip event0 buttonActivated) buttons
+    button <- mapM (`event0` buttonActivated) buttons
     let (_, click) = split $ parseGraphEvent <$> nav
     let select = gElem <$> click
     let selects = accumE def $ (\n (s, _) -> (Just n, s)) <$> select
@@ -81,7 +81,7 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
     let graph = accumE graphInit $ unions [del, ins, lab]
           where
             del = delElem <$> selected <@ button ! "deleteSelected"
-            ins = union createNode createEdge
+            ins = createNode `union` createEdge
             lab = labelElem <$> label <*> selected <@ button ! "renameSelected"
             createNode = insNode <$> ((,) <$> newNode <*> label)
                          <@ button ! "createNode"
@@ -119,7 +119,7 @@ transformSvg d@(Document{..}) css js = d{documentRoot = documentRoot'}
     goNode (NodeElement e) = NodeElement $ goElem e
     goNode n               = n
     addClick attrs = case lookup "class" attrs of
-      Just a  -> if any (==a) ["node", "edge"]
+      Just a  -> if a `elem` ["node", "edge"]
                    then insert "onclick" "clickHandler(this)" attrs
                    else attrs
       Nothing -> attrs
