@@ -63,3 +63,8 @@ labelElem :: (DynGraph gr, Read a, Read b, Default a, Default b)
           => String -> GraphElement -> gr a b -> gr a b
 labelElem l = either (labelEdge $ readDef def l)
                      (labelNode $ readDef def l)
+
+labelSimple :: DynGraph gr
+            => l -> GraphElement -> gr l l -> gr l l
+labelSimple l = either (labelEdge l) (labelNode l)
+

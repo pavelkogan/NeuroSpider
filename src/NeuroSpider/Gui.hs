@@ -9,13 +9,14 @@ import NeuroSpider.Util.Gtk
 import NeuroSpider.Util.GraphViz
 import NeuroSpider.Util.XML
 import NeuroSpider.Util.Reactive
-import Data.Graph.Inductive.Example (vor)
 import Data.Graph.Inductive.Graph (nodeRange, insNode)
---import Data.String
+import qualified Data.Graph.Inductive.Graph as Graph (empty)
+import qualified Data.Graph.Inductive.Tree as Graph
 
 import Prelude hiding (mapM)
 import Data.Default
 import Data.Map (Map, (!), fromList, elems)
+import Data.String (fromString)
 import Data.Text.Lazy (Text, unpack)
 import Data.Traversable (mapM)
 import Graphics.UI.Gtk
@@ -24,7 +25,6 @@ import Graphics.UI.Gtk.WebKit.NetworkRequest
 import Reactive.Banana
 import Reactive.Banana.Frameworks
 import Reactive.Banana.Gtk
-import Safe (readDef)
 import Text.XML hiding (readFile)
 import qualified Data.Text.Lazy.IO as T
 
@@ -60,7 +60,7 @@ setUpGUI builder = do
 
 runGUI :: IO ()
 runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
-  let graphInit = vor
+  let graphInit = Graph.empty :: Graph.Gr Text Text
   let newNodeStart = (+1) . snd . nodeRange $ graphInit
   Widgets _ e2 tb1 tb2 wv buttons <- setUpGUI builder
   run $ do
@@ -70,8 +70,9 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
         Nothing -> return False
         Just u  -> f u >> return True
       ) wv navigationPolicyDecisionRequested
-    label <- stepper def <$> monitorAttr e2 editableChanged entryText
     button <- mapM (`event0` buttonActivated) buttons
+    entryString <- monitorAttr e2 editableChanged entryText
+    let label = fromString <$> stepper def entryString
     let (_, click) = split $ parseGraphEvent <$> nav
     let select = gElem <$> click
     let selects = accumE def $ (\n (s, _) -> (Just n, s)) <$> select
@@ -81,13 +82,10 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
           where
             del = delElem <$> selected <@ button ! "deleteSelected"
             ins = createNode `union` createEdge
-            lab = labelElem <$> label <*> selected <@ button ! "renameSelected"
+            lab = labelSimple <$> label <*> selected <@ button ! "renameSelected"
             createNode = insNode <$> ((,) <$> newNode <*> label)
                          <@ button ! "createNode"
-            createEdge = makeEdge
-                           <$> selected2
-                           <*> selected
-                           <*> fmap (readDef def) label
+            createEdge = makeEdge <$> selected2 <*> selected <*> label
                          <@ button ! "createEdge"
             newNode = accumB newNodeStart $ pure (+1) <@ createNode
     reactimate $ loadWv wv <$> graph
