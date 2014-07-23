@@ -106,6 +106,9 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
     reactimate $ maybeWrite <$> graphS <*> file <@ button ! "saveGraph"
     reactimate $ putStrLn <$> graphS <@ button ! "showGraph"
     reactimate $ loadWv wv <$> graph
+    let clicks = unions $
+                   (button !) <$> words "createNode createEdge renameSelected"
+    reactimate $ pure (entrySetText e2 "") <@ clicks
     let sel1lab = getLabel <$> graphB <*> selected
     let sel2lab = getLabel <$> graphB <*> selected2
     sink tb1 [textBufferText :== maybe def show <$> sel1lab]
