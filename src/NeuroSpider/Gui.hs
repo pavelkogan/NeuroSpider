@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 module NeuroSpider.Gui where
 
@@ -25,7 +26,7 @@ import Graphics.UI.Gtk.WebKit.NetworkRequest
 import Reactive.Banana
 import Reactive.Banana.Frameworks
 import Reactive.Banana.Gtk
-import Text.XML hiding (readFile)
+import Text.XML hiding (readFile, writeFile)
 import qualified Data.Text.Lazy.IO as T
 
 data Widgets = Widgets
@@ -40,6 +41,9 @@ makeButtons :: IO (Map String Button)
 makeButtons = mapM buttonNewWithLabel $ fromList
   [ ("createNode", "Create Node")
   , ("createEdge", "Create Edge")
+  , ("showGraph", "Show Graph")
+  , ("saveGraph", "Save Graph")
+  , ("loadGraph", "Load Graph")
   , ("deleteSelected", "Delete Selected")
   , ("renameSelected", "Rename Selected") ]
 
@@ -60,9 +64,8 @@ setUpGUI builder = do
 
 runGUI :: IO ()
 runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
-  let graphInit = Graph.empty :: Graph.Gr Text Text
-  let newNodeStart = (+1) . snd . nodeRange $ graphInit
-  Widgets _ e2 tb1 tb2 wv buttons <- setUpGUI builder
+  (graphAH, loadGraph) <- newAddHandler
+  Widgets e1 e2 tb1 tb2 wv buttons <- setUpGUI builder
   run $ do
     nav <- eventN (\f _ request _ _ -> do
       uri <- networkRequestGetUri request
@@ -71,14 +74,23 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
         Just u  -> f u >> return True
       ) wv navigationPolicyDecisionRequested
     button <- mapM (`event0` buttonActivated) buttons
-    entryString <- monitorAttr e2 editableChanged entryText
-    let label = fromString <$> stepper def entryString
+    fileString <- monitorAttr e1 editableChanged entryText
+    labelString <- monitorAttr e2 editableChanged entryText
+    let file = stepper def fileString
+    let label = fromString <$> stepper def labelString
     let (_, click) = split $ parseGraphEvent <$> nav
     let select = gElem <$> click
     let selects = accumE def $ (\n (s, _) -> (Just n, s)) <$> select
     let selected = stepper def select
     let selected2 = stepper def $ filterJust $ snd <$> selects
-    let graph = accumE graphInit $ unions [del, ins, lab]
+
+    let loadGraphE = filterJust $ maybeRead <$> file <@ button ! "loadGraph"
+    reactimate $ (loadGraph =<<) <$> loadGraphE
+    graphString <- fromAddHandler graphAH
+    let loadedGraph = (readGraph :: String -> Graph.Gr Text Text) <$> graphString
+    let newNodeStart = (+1) . snd . nodeRange <$> loadedGraph
+
+    let graph = accumE Graph.empty $ unions [del, ins, lab, const <$> loadedGraph]
           where
             del = delElem <$> selected <@ button ! "deleteSelected"
             ins = createNode `union` createEdge
@@ -87,11 +99,14 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
                          <@ button ! "createNode"
             createEdge = makeEdge <$> selected2 <*> selected <*> label
                          <@ button ! "createEdge"
-            newNode = accumB newNodeStart $ pure (+1) <@ createNode
+            newNode = accumB 1 $
+              (const <$> newNodeStart) `union` (pure (+1) <@ createNode)
+    let graphB = showGraph <$> stepper Graph.empty graph
+    reactimate $ maybeWrite <$> graphB <*> file <@ button ! "saveGraph"
+    reactimate $ putStrLn <$> graphB <@ button ! "showGraph"
     reactimate $ loadWv wv <$> graph
     sink tb1 [textBufferText :== show <$> selected]
     sink tb2 [textBufferText :== show <$> selected2]
-  loadWv wv graphInit
   where
   loadWv wv x = do
     xml <- graphToSvg x :: IO Text
@@ -99,3 +114,6 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
     js <- T.readFile =<< getDataFileName "main.js"
     let svg = renderText def $ transformSvg (parseText_ def xml) css js
     webViewLoadString wv (unpack svg) (Just "image/svg+xml") Nothing ""
+  maybeWrite t = \case "" -> return (); f -> writeFile f t
+  maybeRead = \case "" -> Nothing; f -> Just $ readFile f
+

@@ -5,12 +5,22 @@
 module NeuroSpider.Graph where
 
 import Control.Applicative
+import Control.Arrow
 import Data.Default
 import Data.Graph.Inductive.Graph
 import Data.Map (fromList, toList, adjust)
 import Data.Tuple (swap)
 import Safe (readDef)
 import Text.Parsec
+
+newtype Graph' a b = Graph' { unGraph :: ([LNode a], [LEdge b]) }
+  deriving (Show, Read)
+
+showGraph :: (Graph gr, Show a, Show b) => gr a b -> String
+showGraph = show . Graph' . (labNodes &&& labEdges)
+
+readGraph :: (Graph gr, Read a, Read b) => String -> gr a b
+readGraph = uncurry mkGraph . unGraph . read
 
 type GraphElement = Either Edge Node
 instance Default GraphElement where def = Left def
