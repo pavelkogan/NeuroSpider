@@ -45,8 +45,11 @@ parseGraphEvent s = parse p s s where
     m <- node
     return (n, m)
 
+getLabel :: Graph gr => gr a a -> GraphElement -> Maybe a
+getLabel g = either (elab g) (lab g)
+
 elab :: Graph gr => gr a b -> Edge -> Maybe b
-elab g (n, m) = lookup m $ lsuc g n
+elab g (n, m) = if gelem n g then lookup m $ lsuc g n else Nothing
 
 makeEdge :: DynGraph gr
          => GraphElement -> GraphElement -> b -> gr a b -> gr a b

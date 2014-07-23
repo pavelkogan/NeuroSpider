@@ -101,12 +101,15 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
                          <@ button ! "createEdge"
             newNode = accumB 1 $
               (const <$> newNodeStart) `union` (pure (+1) <@ createNode)
-    let graphB = showGraph <$> stepper Graph.empty graph
-    reactimate $ maybeWrite <$> graphB <*> file <@ button ! "saveGraph"
-    reactimate $ putStrLn <$> graphB <@ button ! "showGraph"
+    let graphB = stepper Graph.empty graph
+    let graphS = showGraph <$> graphB
+    reactimate $ maybeWrite <$> graphS <*> file <@ button ! "saveGraph"
+    reactimate $ putStrLn <$> graphS <@ button ! "showGraph"
     reactimate $ loadWv wv <$> graph
-    sink tb1 [textBufferText :== show <$> selected]
-    sink tb2 [textBufferText :== show <$> selected2]
+    let sel1lab = getLabel <$> graphB <*> selected
+    let sel2lab = getLabel <$> graphB <*> selected2
+    sink tb1 [textBufferText :== maybe def show <$> sel1lab]
+    sink tb2 [textBufferText :== maybe def show <$> sel2lab]
   where
   loadWv wv x = do
     xml <- graphToSvg x :: IO Text
