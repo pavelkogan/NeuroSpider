@@ -80,9 +80,8 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
     let label = fromString <$> stepper def labelString
     let (_, click) = split $ parseGraphEvent <$> nav
     let select = gElem <$> click
-    let selects = accumE def $ (\n (s, _) -> (Just n, s)) <$> select
     let selected = stepper def select
-    let selected2 = stepper def $ filterJust $ snd <$> selects
+    let selected2 = stepper def $ selected <@ select
 
     let loadGraphE = filterJust $ maybeRead <$> file <@ button ! "loadGraph"
     reactimate $ (loadGraph =<<) <$> loadGraphE

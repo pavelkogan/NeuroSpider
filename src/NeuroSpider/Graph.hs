@@ -39,11 +39,7 @@ parseGraphEvent s = parse p s s where
         , EdgeClick <$> edge ]
   choice' = choice . map try
   node = read <$> many1 digit
-  edge = do
-    n <- node
-    _ <- string "->"
-    m <- node
-    return (n, m)
+  edge = (,) <$> node <* string "->" <*> node
 
 getLabel :: Graph gr => gr a a -> GraphElement -> Maybe a
 getLabel g = either (elab g) (lab g)
