@@ -32,8 +32,7 @@
           <object class="GtkHPaned" id="hpaned1">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="position">432</property>
-            <property name="position_set">True</property>
+            <property name="position">9999</property>
             <child>
               <object class="GtkScrolledWindow" id="scrolledwindow1">
                 <property name="visible">True</property>
@@ -46,7 +45,7 @@
                 </child>
               </object>
               <packing>
-                <property name="resize">False</property>
+                <property name="resize">True</property>
                 <property name="shrink">True</property>
               </packing>
             </child>
@@ -126,8 +125,8 @@
                 </child>
               </object>
               <packing>
-                <property name="resize">True</property>
-                <property name="shrink">True</property>
+                <property name="resize">False</property>
+                <property name="shrink">False</property>
               </packing>
             </child>
           </object>
