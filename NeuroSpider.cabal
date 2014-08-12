@@ -19,8 +19,8 @@ executable NeuroSpider
                        NeuroSpider.Util.Reactive
                        NeuroSpider.Util.XML
   build-depends:       base >=4.6 && <4.8,
-                       gtk >=0.12 && <0.13,
-                       webkit >=0.12 && <0.13,
+                       gtk >=0.13 && <0.14,
+                       webkit >=0.13 && <0.14,
                        transformers >=0.3 && <0.4,
                        parsec,
                        containers,

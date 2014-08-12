@@ -38,7 +38,7 @@ data Widgets = Widgets
                  (Map String Button)
 
 makeButtons :: IO (Map String Button)
-makeButtons = mapM buttonNewWithLabel $ fromList
+makeButtons = mapM (buttonNewWithLabel :: String -> IO Button) $ fromList
   [ ("createNode", "Create Node")
   , ("createEdge", "Create Edge")
   , ("showGraph", "Show Graph")
@@ -107,7 +107,7 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
     reactimate $ loadWv wv <$> graph
     let clicks = unions $
                    (button !) <$> words "createNode createEdge renameSelected"
-    reactimate $ pure (entrySetText e2 "") <@ clicks
+    reactimate $ pure (entrySetText e2 (""::String)) <@ clicks
     let sel1lab = getLabel <$> graphB <*> selected
     let sel2lab = getLabel <$> graphB <*> selected2
     sink tb1 [textBufferText :== maybe def show <$> sel1lab]
@@ -118,7 +118,7 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
     css <- T.readFile =<< getDataFileName "main.css"
     js <- T.readFile =<< getDataFileName "main.js"
     let svg = renderText def $ transformSvg (parseText_ def xml) css js
-    webViewLoadString wv (unpack svg) (Just "image/svg+xml") Nothing ""
+    webViewLoadString wv (unpack svg) (Just "image/svg+xml") ""
   maybeWrite t = \case "" -> return (); f -> writeFile f t
   maybeRead = \case "" -> Nothing; f -> Just $ readFile f
 

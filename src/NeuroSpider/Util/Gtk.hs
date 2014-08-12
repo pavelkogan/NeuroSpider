@@ -33,7 +33,7 @@ instance FromBuilder ScrolledWindow where castTo = castToScrolledWindow
 withBuilder :: FilePath -> (Builder -> IO a) -> IO Window
 withBuilder bFile action = do
   builder <- getBuilder bFile
-  window <- builderGetObject builder castToWindow "window1"
+  window <- builderGetObject builder castToWindow ("window1"::String)
   _ <- action builder
   return window
 
