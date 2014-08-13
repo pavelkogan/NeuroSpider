@@ -47,4 +47,5 @@ executable NeuroSpider
   default-extensions:  NoImplicitPrelude
                        OverloadedStrings
                        LambdaCase
+                       TupleSections
 

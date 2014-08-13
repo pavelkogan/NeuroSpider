@@ -1,6 +1,7 @@
 module NeuroSpider.Gui (runGUI) where
 
 import NeuroSpider.Graph
+import NeuroSpider.UiManager
 import NeuroSpider.Util.Gtk
 import NeuroSpider.Util.GraphViz
 import NeuroSpider.Util.XML
@@ -29,6 +30,7 @@ data Widgets = Widgets
                  TextBuffer
                  WebView
                  (Map Text Button)
+                 (Map UiAction Action)
 
 makeButtons :: IO (Map Text Button)
 makeButtons = mapM (buttonNewWithLabel :: Text -> IO Button) $ fromList
@@ -49,16 +51,19 @@ setUpGUI builder = do
     *-> "textbuffer2"
   sw <- "scrolledwindow1" builder :: IO ScrolledWindow
   bb <- "vbuttonbox1" builder :: IO VButtonBox
+  vb <- "vbox1" builder :: IO VBox
+  wi <- "window1" builder :: IO Window
   wv <- webViewNew
   set sw [ containerChild := wv ]
   buttons <- makeButtons
   mapM_ (containerAdd bb) $ elems buttons
-  return $ widgets wv buttons
+  actions <- setupMenuToolBars wi vb
+  return $ widgets wv buttons actions
 
 runGUI :: IO ()
 runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
   (graphAH, loadGraph) <- newAddHandler
-  Widgets e1 e2 tb1 tb2 wv buttons <- setUpGUI builder
+  Widgets e1 e2 tb1 tb2 wv buttons actions <- setUpGUI builder
   run $ do
     nav <- eventN (\f _ request _ _ -> do
       uri <- networkRequestGetUri request
@@ -67,6 +72,7 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
         Just u  -> f u >> return True
       ) wv navigationPolicyDecisionRequested
     button <- mapM (`event0` buttonActivated) buttons
+    action <- mapM (`event0` actionActivated) actions
     fileString <- monitorAttr e1 editableChanged entryText
     labelString <- monitorAttr e2 editableChanged entryText
     let file = Filepath.fromText <$> stepper "" fileString
