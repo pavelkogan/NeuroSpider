@@ -2,7 +2,16 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module NeuroSpider.Graph where
+module NeuroSpider.Graph 
+  ( parseGraphEvent
+  , showGraph
+  , readGraph
+  , gElem
+  , getLabel
+  , labelSimple
+  , makeEdge
+  , delElem
+  ) where
 
 import Control.Applicative
 import Control.Arrow
@@ -10,7 +19,6 @@ import Data.Default
 import Data.Graph.Inductive.Graph
 import Data.Map (fromList, toList, adjust)
 import Data.Tuple (swap)
-import Safe (readDef)
 import Text.Parsec
 
 newtype Graph' a b = Graph' { unGraph :: ([LNode a], [LEdge b]) }
@@ -67,11 +75,6 @@ labelEdge l (n1,n2) g = case match n1 g of
     let newOut = adjust (const l) n2 `asMap` o
     in  (i, n', nl, newOut) & g'
   where asMap f = map swap . toList . f . fromList . map swap
-
-labelElem :: (DynGraph gr, Read a, Read b, Default a, Default b)
-          => String -> GraphElement -> gr a b -> gr a b
-labelElem l = either (labelEdge $ readDef def l)
-                     (labelNode $ readDef def l)
 
 labelSimple :: DynGraph gr
             => l -> GraphElement -> gr l l -> gr l l

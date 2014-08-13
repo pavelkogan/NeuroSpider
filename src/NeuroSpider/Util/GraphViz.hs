@@ -1,4 +1,4 @@
-module NeuroSpider.Util.GraphViz where
+module NeuroSpider.Util.GraphViz (graphToSvg) where
 
 import Control.Monad
 import Data.Graph.Inductive.Graph
@@ -7,9 +7,6 @@ import Data.GraphViz.Attributes.Complete
 import Data.String
 import Data.Text.Lazy (pack)
 import System.IO.Strict (hGetContents)
-
-dotStringToSvg :: IsString s => String -> IO s
-dotStringToSvg = dotToSvg . parseDotGraph . fromString
 
 dotToSvg :: IsString s => DotGraph Node -> IO s
 dotToSvg d = graphvizWithHandle Dot d Svg get

@@ -2,7 +2,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module NeuroSpider.Util.Gtk where
+module NeuroSpider.Util.Gtk
+  ( withBuilder
+  , fromBuilder
+  , ($->)
+  , (*->)
+  , doGUI
+  ) where
 
 import Paths_NeuroSpider
 

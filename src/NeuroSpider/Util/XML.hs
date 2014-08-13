@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module NeuroSpider.Util.XML where
+module NeuroSpider.Util.XML (transformSvg) where
 
 import Prelude hiding (lookup)
 import Data.Map (lookup, insert)

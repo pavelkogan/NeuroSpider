@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
-module NeuroSpider.Gui where
+module NeuroSpider.Gui (runGUI) where
 
 import Paths_NeuroSpider
 
