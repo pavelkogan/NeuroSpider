@@ -1,24 +1,18 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase #-}
-
 module NeuroSpider.Gui (runGUI) where
-
-import Paths_NeuroSpider
 
 import NeuroSpider.Graph
 import NeuroSpider.Util.Gtk
 import NeuroSpider.Util.GraphViz
 import NeuroSpider.Util.XML
 import NeuroSpider.Util.Reactive
+import NeuroSpider.Paths
 import Data.Graph.Inductive.Graph (nodeRange, insNode)
 import qualified Data.Graph.Inductive.Graph as Graph (empty)
 import qualified Data.Graph.Inductive.Tree as Graph
 
-import Prelude hiding (mapM)
+import BasicPrelude hiding (mapM, union)
 import Data.Default
-import Data.Map (Map, (!), fromList, elems)
-import Data.String (fromString)
-import Data.Text.Lazy (Text, unpack)
+import Data.Map ((!), fromList, elems)
 import Data.Traversable (mapM)
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.WebKit.WebView
@@ -26,8 +20,7 @@ import Graphics.UI.Gtk.WebKit.NetworkRequest
 import Reactive.Banana
 import Reactive.Banana.Frameworks
 import Reactive.Banana.Gtk
-import Text.XML hiding (readFile, writeFile)
-import qualified Data.Text.Lazy.IO as T
+import qualified Filesystem.Path.CurrentOS as Filepath
 
 data Widgets = Widgets
                  Entry
@@ -35,10 +28,10 @@ data Widgets = Widgets
                  TextBuffer
                  TextBuffer
                  WebView
-                 (Map String Button)
+                 (Map Text Button)
 
-makeButtons :: IO (Map String Button)
-makeButtons = mapM (buttonNewWithLabel :: String -> IO Button) $ fromList
+makeButtons :: IO (Map Text Button)
+makeButtons = mapM (buttonNewWithLabel :: Text -> IO Button) $ fromList
   [ ("createNode", "Create Node")
   , ("createEdge", "Create Edge")
   , ("showGraph", "Show Graph")
@@ -76,7 +69,7 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
     button <- mapM (`event0` buttonActivated) buttons
     fileString <- monitorAttr e1 editableChanged entryText
     labelString <- monitorAttr e2 editableChanged entryText
-    let file = stepper def fileString
+    let file = Filepath.fromText <$> stepper "" fileString
     let label = fromString <$> stepper def labelString
     let (_, click) = split $ parseGraphEvent <$> nav
     let select = gElem <$> click
@@ -86,7 +79,7 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
     let loadGraphE = filterJust $ maybeRead <$> file <@ button ! "loadGraph"
     reactimate $ (loadGraph =<<) <$> loadGraphE
     graphString <- fromAddHandler graphAH
-    let loadedGraph = (readGraph :: String -> Graph.Gr Text Text) <$> graphString
+    let loadedGraph = (readGraph :: Text -> Graph.Gr Text Text) <$> graphString
     let newNodeStart = (+1) . snd . nodeRange <$> loadedGraph
 
     let graph = accumE Graph.empty $ unions [del, ins, lab, const <$> loadedGraph]
@@ -107,18 +100,17 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
     reactimate $ loadWv wv <$> graph
     let clicks = unions $
                    (button !) <$> words "createNode createEdge renameSelected"
-    reactimate $ pure (entrySetText e2 (""::String)) <@ clicks
+    reactimate $ pure (entrySetText e2 (""::Text)) <@ clicks
     let sel1lab = getLabel <$> graphB <*> selected
     let sel2lab = getLabel <$> graphB <*> selected2
-    sink tb1 [textBufferText :== maybe def show <$> sel1lab]
-    sink tb2 [textBufferText :== maybe def show <$> sel2lab]
+    sink tb1 [textBufferText :== maybe "" show <$> sel1lab]
+    sink tb2 [textBufferText :== maybe "" show <$> sel2lab]
   where
   loadWv wv x = do
-    xml <- graphToSvg x :: IO Text
-    css <- T.readFile =<< getDataFileName "main.css"
-    js <- T.readFile =<< getDataFileName "main.js"
-    let svg = renderText def $ transformSvg (parseText_ def xml) css js
-    webViewLoadString wv (unpack svg) (Just "image/svg+xml") ""
+    css <- readFile =<< getDataFileName "main.css"
+    js <- readFile =<< getDataFileName "main.js"
+    svg <- return . transformSvg css js =<< graphToSvg x
+    webViewLoadString wv svg (Just "image/svg+xml") ""
   maybeWrite t = \case "" -> return (); f -> writeFile f t
   maybeRead = \case "" -> Nothing; f -> Just $ readFile f
 

@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module NeuroSpider.Graph 
+module NeuroSpider.Graph
   ( parseGraphEvent
   , showGraph
   , readGraph
@@ -13,21 +13,21 @@ module NeuroSpider.Graph
   , delElem
   ) where
 
-import Control.Applicative
-import Control.Arrow
+import BasicPrelude hiding (try)
 import Data.Default
 import Data.Graph.Inductive.Graph
 import Data.Map (fromList, toList, adjust)
-import Data.Tuple (swap)
+import Data.Text (pack)
 import Text.Parsec
+import Text.Parsec.Text ()
 
 newtype Graph' a b = Graph' { unGraph :: ([LNode a], [LEdge b]) }
   deriving (Show, Read)
 
-showGraph :: (Graph gr, Show a, Show b) => gr a b -> String
+showGraph :: (Graph gr, Show a, Show b) => gr a b -> Text
 showGraph = show . Graph' . (labNodes &&& labEdges)
 
-readGraph :: (Graph gr, Read a, Read b) => String -> gr a b
+readGraph :: (Graph gr, Read a, Read b) => Text -> gr a b
 readGraph = uncurry mkGraph . unGraph . read
 
 type GraphElement = Either Edge Node
@@ -40,13 +40,13 @@ gElem :: GraphEvent -> GraphElement
 gElem (NodeClick n) = Right n
 gElem (EdgeClick e) = Left e
 
-parseGraphEvent :: String -> Either ParseError GraphEvent
-parseGraphEvent s = parse p s s where
+parseGraphEvent :: Text -> Either ParseError GraphEvent
+parseGraphEvent s = parse p (textToString s) s where
   p = string "click:" >> choice'
         [ NodeClick <$> node <* eof
         , EdgeClick <$> edge ]
   choice' = choice . map try
-  node = read <$> many1 digit
+  node = read . pack <$> many1 digit
   edge = (,) <$> node <* string "->" <*> node
 
 getLabel :: Graph gr => gr a a -> GraphElement -> Maybe a

@@ -2,7 +2,7 @@
 
 module NeuroSpider.Util.Reactive (run) where
 
-import Control.Monad
+import BasicPrelude
 import Reactive.Banana
 import Reactive.Banana.Frameworks
 

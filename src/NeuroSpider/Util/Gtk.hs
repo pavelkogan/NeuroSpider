@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module NeuroSpider.Util.Gtk
@@ -10,12 +9,10 @@ module NeuroSpider.Util.Gtk
   , doGUI
   ) where
 
-import Paths_NeuroSpider
+import NeuroSpider.Paths
 
-import Control.Applicative
-import Control.Monad.IO.Class
+import BasicPrelude hiding (on)
 import Control.Monad.Trans.Reader
-import Data.String
 import Graphics.UI.Gtk
 
 class GObjectClass a => FromBuilder a where
@@ -36,7 +33,7 @@ instance FromBuilder TextBuffer     where castTo = castToTextBuffer
 instance FromBuilder VButtonBox     where castTo = castToVButtonBox
 instance FromBuilder ScrolledWindow where castTo = castToScrolledWindow
 
-withBuilder :: FilePath -> (Builder -> IO a) -> IO Window
+withBuilder :: String -> (Builder -> IO a) -> IO Window
 withBuilder bFile action = do
   builder <- getBuilder bFile
   window <- builderGetObject builder castToWindow ("window1"::String)
@@ -54,10 +51,11 @@ doGUI action = do
 perform :: MonadIO m => IO a -> m Bool
 perform action = liftIO action >> return False
 
-getBuilder :: FilePath -> IO Builder
+getBuilder :: String -> IO Builder
 getBuilder bFile = do
   builder <- builderNew
-  builderAddFromFile builder =<< getDataFileName bFile
+  bString <- readFile =<< getDataFileName bFile
+  builderAddFromString builder bString
   return builder
 
 fromBuilder :: Builder -> ReaderT Builder IO a -> IO a
@@ -72,3 +70,4 @@ f $-> x = f <$> ReaderT x
       -> (Builder -> IO a)
       -> ReaderT Builder IO b
 f *-> x = f <*> ReaderT x
+

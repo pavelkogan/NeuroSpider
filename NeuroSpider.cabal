@@ -18,10 +18,14 @@ executable NeuroSpider
                        NeuroSpider.Util.Gtk
                        NeuroSpider.Util.Reactive
                        NeuroSpider.Util.XML
+                       NeuroSpider.Paths
   build-depends:       base >=4.6 && <4.8,
                        gtk >=0.13 && <0.14,
                        webkit >=0.13 && <0.14,
                        transformers >=0.3 && <0.4,
+                       system-filepath,
+                       basic-prelude,
+                       bytestring,
                        parsec,
                        containers,
                        mtl,
@@ -40,4 +44,7 @@ executable NeuroSpider
   hs-source-dirs:      src
   ghc-options:         -O2 -Wall
   default-language:    Haskell2010
+  default-extensions:  NoImplicitPrelude
+                       OverloadedStrings
+                       LambdaCase
 

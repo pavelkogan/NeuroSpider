@@ -1,15 +1,12 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module NeuroSpider.Util.XML (transformSvg) where
 
-import Prelude hiding (lookup)
+import BasicPrelude hiding (lookup, insert)
 import Data.Map (lookup, insert)
-import Data.Text.Lazy
-import Data.String
 import Text.XML
 import Text.XML.Writer
-import qualified Data.Text as S
+import qualified Data.Text.Lazy as Lazy (toStrict, fromStrict)
 
 svgNodes :: String -> Text -> [Node]
 svgNodes tag = elem' (name tag) attrs
@@ -20,11 +17,17 @@ svgNodes tag = elem' (name tag) attrs
       "script" -> [("type", "text/ecmascript")]
       _        -> []
 
-elem' :: Name -> [(Name, S.Text)] -> Text -> [Node]
-elem' t as = render . elementA t as . content . toStrict
+elem' :: Name -> [(Name, Text)] -> Text -> [Node]
+elem' t as = render . elementA t as . content
 
-transformSvg :: Document -> Text -> Text -> Document
-transformSvg d@(Document{..}) css js = d{documentRoot = documentRoot'}
+transformSvg :: Text -> Text -> Text -> Text
+transformSvg css js = renderText' . transformSvg_ css js . parseText'
+  where
+    renderText' = Lazy.toStrict . renderText def
+    parseText' = parseText_ def . Lazy.fromStrict
+
+transformSvg_ :: Text -> Text -> Document -> Document
+transformSvg_ css js d@(Document{..}) = d{documentRoot = documentRoot'}
   where
     documentRoot' = goElem documentRoot
     goElem e@(Element{..}) = case elementName of
@@ -43,3 +46,4 @@ transformSvg d@(Document{..}) css js = d{documentRoot = documentRoot'}
                    then insert "onclick" "clickHandler(this)" attrs
                    else attrs
       Nothing -> attrs
+
