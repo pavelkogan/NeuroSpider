@@ -17,6 +17,8 @@ data UiAction =
   | New | Open | Save | SaveAs | Quit |
   Edit
   | Cut | Copy | Paste | Delete |
+  Graph
+  | CreateNode | CreateEdge | Rename | Show |
   Help
   | About
   deriving (Eq, Show, Read, Enum, Bounded, Ord)
@@ -24,9 +26,15 @@ data UiAction =
 name :: UiAction -> Text
 name SaveAs = "Save _As"
 name Cut = "Cu_t"
+name CreateNode = "_Node"
+name CreateEdge = "_Edge"
 name a = ("_"<>) . unwords . upperSplit . show $ a
 
 stock :: UiAction -> Text
+stock CreateNode = stock_ "Add"
+stock CreateEdge = stock_ "Connect"
+stock Rename = stock_ "Convert"
+stock Show = stock_ "Print"
 stock a = stock_ $ show a
 
 stock_ :: Text -> Text
@@ -36,7 +44,8 @@ data ActionActivate = Skip | FireEvent | DoIO (IO ())
 
 activate :: UiAction -> ActionActivate
 activate Quit                          = DoIO mainQuit
-activate a | a `elem` [File,Edit,Help] = Skip
+activate a | a `elem`
+             [File,Edit,Graph,Help]    = Skip
            | otherwise                 = FireEvent
 
 uiXmlString :: Text
@@ -57,6 +66,11 @@ uiXml = ui $ do
       menuitem Copy
       menuitem Paste
       menuitem Delete
+    menu Graph $ do
+      menuitem CreateNode
+      menuitem CreateEdge
+      menuitem Rename
+      menuitem Show
     menu Help $ do
       menuitem About
   toolbar $ do
@@ -67,6 +81,13 @@ uiXml = ui $ do
     toolitem Cut
     toolitem Copy
     toolitem Paste
+    separator
+    toolitem CreateNode
+    toolitem CreateEdge
+    toolitem Rename
+    toolitem Delete
+    separator
+    toolitem Show
   where
     ui = document "ui"
     menubar = element "menubar"

@@ -13,7 +13,7 @@ import qualified Data.Graph.Inductive.Tree as Graph
 
 import BasicPrelude hiding (mapM, union)
 import Data.Default
-import Data.Map ((!), fromList, elems)
+import Data.Map ((!))
 import Data.Traversable (mapM)
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.WebKit.WebView
@@ -29,18 +29,7 @@ data Widgets = Widgets
                  TextBuffer
                  TextBuffer
                  WebView
-                 (Map Text Button)
                  (Map UiAction Action)
-
-makeButtons :: IO (Map Text Button)
-makeButtons = mapM (buttonNewWithLabel :: Text -> IO Button) $ fromList
-  [ ("createNode", "Create Node")
-  , ("createEdge", "Create Edge")
-  , ("showGraph", "Show Graph")
-  , ("saveGraph", "Save Graph")
-  , ("loadGraph", "Load Graph")
-  , ("deleteSelected", "Delete Selected")
-  , ("renameSelected", "Rename Selected") ]
 
 setUpGUI :: Builder -> IO Widgets
 setUpGUI builder = do
@@ -50,20 +39,17 @@ setUpGUI builder = do
     *-> "textbuffer1"
     *-> "textbuffer2"
   sw <- "scrolledwindow1" builder :: IO ScrolledWindow
-  bb <- "vbuttonbox1" builder :: IO VButtonBox
   vb <- "vbox1" builder :: IO VBox
   wi <- "window1" builder :: IO Window
   wv <- webViewNew
   set sw [ containerChild := wv ]
-  buttons <- makeButtons
-  mapM_ (containerAdd bb) $ elems buttons
   actions <- setupMenuToolBars wi vb
-  return $ widgets wv buttons actions
+  return $ widgets wv actions
 
 runGUI :: IO ()
 runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
   (graphAH, loadGraph) <- newAddHandler
-  Widgets e1 e2 tb1 tb2 wv buttons actions <- setUpGUI builder
+  Widgets e1 e2 tb1 tb2 wv actions <- setUpGUI builder
   run $ do
     nav <- eventN (\f _ request _ _ -> do
       uri <- networkRequestGetUri request
@@ -71,7 +57,6 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
         Nothing -> return False
         Just u  -> f u >> return True
       ) wv navigationPolicyDecisionRequested
-    button <- mapM (`event0` buttonActivated) buttons
     action <- mapM (`event0` actionActivated) actions
     fileString <- monitorAttr e1 editableChanged entryText
     labelString <- monitorAttr e2 editableChanged entryText
@@ -82,7 +67,7 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
     let selected = stepper def select
     let selected2 = stepper def $ selected <@ select
 
-    let loadGraphE = filterJust $ maybeRead <$> file <@ button ! "loadGraph"
+    let loadGraphE = filterJust $ maybeRead <$> file <@ action!Open
     reactimate $ (loadGraph =<<) <$> loadGraphE
     graphString <- fromAddHandler graphAH
     let loadedGraph = (readGraph :: Text -> Graph.Gr Text Text) <$> graphString
@@ -90,22 +75,22 @@ runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
 
     let graph = accumE Graph.empty $ unions [del, ins, lab, const <$> loadedGraph]
           where
-            del = delElem <$> selected <@ button ! "deleteSelected"
+            del = delElem <$> selected <@ action!Delete
             ins = createNode `union` createEdge
-            lab = labelSimple <$> label <*> selected <@ button ! "renameSelected"
+            lab = labelSimple <$> label <*> selected <@ action!Rename
             createNode = insNode <$> ((,) <$> newNode <*> label)
-                         <@ button ! "createNode"
+                         <@ action!CreateNode
             createEdge = makeEdge <$> selected2 <*> selected <*> label
-                         <@ button ! "createEdge"
+                         <@ action!CreateEdge
             newNode = accumB 1 $
               (const <$> newNodeStart) `union` (pure (+1) <@ createNode)
     let graphB = stepper Graph.empty graph
     let graphS = showGraph <$> graphB
-    reactimate $ maybeWrite <$> graphS <*> file <@ button ! "saveGraph"
-    reactimate $ putStrLn <$> graphS <@ button ! "showGraph"
+    reactimate $ maybeWrite <$> graphS <*> file <@ action!Save
+    reactimate $ putStrLn <$> graphS <@ action!Show
     reactimate $ loadWv wv <$> graph
     let clicks = unions $
-                   (button !) <$> words "createNode createEdge renameSelected"
+                   (action !) <$> [CreateNode, CreateEdge, Rename]
     reactimate $ pure (entrySetText e2 (""::Text)) <@ clicks
     let sel1lab = getLabel <$> graphB <*> selected
     let sel2lab = getLabel <$> graphB <*> selected2
