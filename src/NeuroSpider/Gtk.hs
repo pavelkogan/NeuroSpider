@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module NeuroSpider.Util.Gtk
+module NeuroSpider.Gtk
   ( withBuilder
   , fromBuilder
   , ($->)

@@ -3,11 +3,12 @@
 module NeuroSpider.Gui (runGUI) where
 
 import NeuroSpider.Graph
-import NeuroSpider.UiManager
-import NeuroSpider.Util.Gtk
-import NeuroSpider.Util.GraphViz
-import NeuroSpider.Util.XML
+import NeuroSpider.GraphViz
+import NeuroSpider.Gtk
 import NeuroSpider.Paths
+import NeuroSpider.UiManager
+import NeuroSpider.XML
+
 import Data.Graph.Inductive.Graph (nodeRange, insNode)
 import qualified Data.Graph.Inductive.Graph as Graph (empty)
 import qualified Data.Graph.Inductive.Tree as Graph

@@ -14,10 +14,11 @@ executable NeuroSpider
   other-modules:       Paths_NeuroSpider
                        NeuroSpider.Gui
                        NeuroSpider.Graph
-                       NeuroSpider.Util.GraphViz
-                       NeuroSpider.Util.Gtk
-                       NeuroSpider.Util.XML
+                       NeuroSpider.GraphViz
+                       NeuroSpider.Gtk
                        NeuroSpider.Paths
+                       NeuroSpider.UiManager
+                       NeuroSpider.XML
   build-depends:       base >=4.6 && <4.8,
                        gtk >=0.13 && <0.14,
                        webkit >=0.13 && <0.14,

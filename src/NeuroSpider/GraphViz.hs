@@ -1,4 +1,4 @@
-module NeuroSpider.Util.GraphViz (graphToSvg) where
+module NeuroSpider.GraphViz (graphToSvg) where
 
 import BasicPrelude
 import Data.Graph.Inductive.Graph
