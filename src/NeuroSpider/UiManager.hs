@@ -9,7 +9,7 @@ import Data.Text (pack, unpack, toLower, breakOn)
 import Graphics.UI.Gtk
 import Text.XML
 import Text.XML.Writer
-import qualified Data.Map as Map (insert, empty)
+import qualified Data.Map as Map (insert, empty, lookup)
 import qualified Data.Text.Lazy as Lazy
 
 data UiAction =
@@ -99,8 +99,9 @@ uiXml = ui $ do
     elemA e a = elementA e [("action", show a), ("name", name a)]
 
 setupMenuToolBars :: (WindowClass w, BoxClass b)
-         => w -> b -> IO (Map UiAction Action)
-setupMenuToolBars window box = do
+         => w -> b -> Map UiAction (IO ())
+         -> IO (Map UiAction Action)
+setupMenuToolBars window box activations = do
 
   stockIds <- stockListIds
   actiongroup <- actionGroupNew ("actiongroup"::Text)
@@ -108,7 +109,8 @@ setupMenuToolBars window box = do
     let stock' = if stock a `elem` stockIds then Just (stock a) else Nothing
     action <- actionNew (show a) (name a) Nothing stock'
     actionGroupAddActionWithAccel actiongroup action (Nothing :: Maybe Text)
-    case activate a of
+    let activation = maybe (activate a) DoIO $ Map.lookup a activations
+    case activation of
       Skip      -> return id
       FireEvent -> return $ Map.insert a action
       DoIO io   -> on action actionActivated io >> return id

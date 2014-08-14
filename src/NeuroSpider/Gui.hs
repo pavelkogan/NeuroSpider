@@ -13,9 +13,9 @@ import Data.Graph.Inductive.Graph (nodeRange, insNode)
 import qualified Data.Graph.Inductive.Graph as Graph (empty)
 import qualified Data.Graph.Inductive.Tree as Graph
 
-import BasicPrelude hiding (mapM, union)
+import BasicPrelude hiding (mapM, union, on)
 import Data.Default
-import Data.Map ((!))
+import Data.Map ((!), fromList)
 import Data.Traversable (mapM)
 import Graphics.UI.Gtk
 import Graphics.UI.Gtk.WebKit.WebView
@@ -45,7 +45,7 @@ setUpGUI builder = do
   wi <- "window1" builder :: IO Window
   wv <- webViewNew
   set sw [ containerChild := wv ]
-  actions <- setupMenuToolBars wi vb
+  actions <- setupMenuToolBars wi vb $ fromList [(About, aboutDialog)]
   return $ widgets wv actions
 
 runGUI :: IO ()
@@ -115,4 +115,11 @@ eventNetwork w g = do
       webViewLoadString wv svg (Just "image/svg+xml") ""
     maybeWrite t = \case "" -> return (); f -> writeFile f t
     maybeRead = \case "" -> Nothing; f -> Just $ readFile f
+
+aboutDialog :: IO ()
+aboutDialog = do
+  dialog <- aboutDialogNew
+  windowSetPosition dialog WinPosCenter
+  set dialog [aboutDialogVersion := versionText]
+  dialogRun dialog >> widgetDestroy dialog
 
