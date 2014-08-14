@@ -27,17 +27,16 @@ import qualified Filesystem.Path.CurrentOS as Filepath
 
 data Widgets = Widgets
                  Entry
-                 Entry
                  TextBuffer
                  TextBuffer
                  WebView
+                 FileChooserDialog
                  (Map UiAction Action)
 
 setUpGUI :: Builder -> IO Widgets
 setUpGUI builder = do
   widgets <- fromBuilder builder $ Widgets
     $-> "entry1"
-    *-> "entry2"
     *-> "textbuffer1"
     *-> "textbuffer2"
   sw <- "scrolledwindow1" builder :: IO ScrolledWindow
@@ -45,8 +44,12 @@ setUpGUI builder = do
   wi <- "window1" builder :: IO Window
   wv <- webViewNew
   set sw [ containerChild := wv ]
-  actions <- setupMenuToolBars wi vb $ fromList [(About, aboutDialog)]
-  return $ widgets wv actions
+  od <- openDialog wi
+  actions <- setupMenuToolBars wi vb $ fromList
+    [ (About, aboutDialog)
+    , (Open, runDialog od)
+    ]
+  return $ widgets wv od actions
 
 runGUI :: IO ()
 runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
@@ -61,7 +64,7 @@ eventNetwork :: forall t. Frameworks t
              -> Moment t ()
 eventNetwork w g = do
   let (graphAH, loadGraph) = g
-      Widgets e1 e2 tb1 tb2 wv actions = w
+      Widgets e1 tb1 tb2 wv od actions = w
   nav <- eventN (\f _ request _ _ -> do
     uri <- networkRequestGetUri request
     case uri of
@@ -69,16 +72,19 @@ eventNetwork w g = do
       Just u  -> f u >> return True
     ) wv navigationPolicyDecisionRequested
   action <- mapM (`event0` actionActivated) actions
-  fileString <- monitorAttr e1 editableChanged entryText
-  labelString <- monitorAttr e2 editableChanged entryText
-  let file = Filepath.fromText <$> stepper "" fileString
+  fileString <- fmap filterJust $ monitorG od response $ flip $ \case
+    ResponseAccept -> fileChooserGetFilename
+    _              -> const $ return Nothing
+  labelString <- monitorAttr e1 editableChanged entryText
+  let loadFileE = Filepath.fromText . fromString <$> fileString
+  let file = stepper "" loadFileE
   let label = fromString <$> stepper def labelString
   let (_, click) = split $ parseGraphEvent <$> nav
   let select = gElem <$> click
   let selected = stepper def select
   let selected2 = stepper def $ selected <@ select
 
-  let loadGraphE = filterJust $ maybeRead <$> file <@ action!Open
+  let loadGraphE = filterJust $ maybeRead <$> loadFileE
   reactimate $ (loadGraph =<<) <$> loadGraphE
   graphString <- fromAddHandler graphAH
   let loadedGraph = (readGraph :: Text -> Graph.Gr Text Text) <$> graphString
@@ -102,7 +108,7 @@ eventNetwork w g = do
   reactimate $ loadWv wv <$> graph
   let clicks = unions $
                  (action !) <$> [CreateNode, CreateEdge, Rename]
-  reactimate $ pure (entrySetText e2 (""::Text)) <@ clicks
+  reactimate $ pure (entrySetText e1 (""::Text)) <@ clicks
   let sel1lab = getLabel <$> graphB <*> selected
   let sel2lab = getLabel <$> graphB <*> selected2
   sink tb1 [textBufferText :== maybe "" show <$> sel1lab]
@@ -122,4 +128,14 @@ aboutDialog = do
   windowSetPosition dialog WinPosCenter
   set dialog [aboutDialogVersion := versionText]
   dialogRun dialog >> widgetDestroy dialog
+
+openDialog :: Window -> IO FileChooserDialog
+openDialog parent = do
+  dialog <- fileChooserDialogNew Nothing (Just parent) FileChooserActionOpen
+              [(stockCancel,ResponseCancel),(stockOpen,ResponseAccept)]
+  windowSetPosition dialog WinPosCenterOnParent
+  return dialog
+
+runDialog :: DialogClass self => self -> IO ()
+runDialog dialog = dialogRun dialog >> widgetHide dialog
 
