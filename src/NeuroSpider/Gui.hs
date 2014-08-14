@@ -54,17 +54,11 @@ setUpGUI builder = do
 runGUI :: IO ()
 runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
   widgets <- setUpGUI builder
-  graphHandlers <- newAddHandler
-  network <- compile $ eventNetwork widgets graphHandlers
+  network <- compile $ eventNetwork widgets
   actuate network
 
-eventNetwork :: forall t. Frameworks t
-             => Widgets
-             -> (AddHandler Text, Handler Text)
-             -> Moment t ()
-eventNetwork w g = do
-  let (graphAH, loadGraph) = g
-      Widgets e1 tb1 tb2 wv od actions = w
+eventNetwork :: forall t. Frameworks t => Widgets -> Moment t ()
+eventNetwork (Widgets e1 tb1 tb2 wv od actions) = do
   nav <- eventN (\f _ request _ _ -> do
     uri <- networkRequestGetUri request
     case uri of
@@ -85,8 +79,8 @@ eventNetwork w g = do
   let selected2 = stepper def $ selected <@ select
 
   let loadGraphE = filterJust $ maybeRead <$> loadFileE
+  (graphString, loadGraph) <- newEvent
   reactimate $ (loadGraph =<<) <$> loadGraphE
-  graphString <- fromAddHandler graphAH
   let loadedGraph = (readGraph :: Text -> Graph.Gr Text Text) <$> graphString
   let newNodeStart = (+1) . snd . nodeRange <$> loadedGraph
 
@@ -114,11 +108,11 @@ eventNetwork w g = do
   sink tb1 [textBufferText :== maybe "" show <$> sel1lab]
   sink tb2 [textBufferText :== maybe "" show <$> sel2lab]
   where
-    loadWv wv x = do
+    loadWv webview x = do
       css <- readFile =<< getDataFileName "main.css"
       js <- readFile =<< getDataFileName "main.js"
       svg <- return . transformSvg css js =<< graphToSvg x
-      webViewLoadString wv svg (Just "image/svg+xml") ""
+      webViewLoadString webview svg (Just "image/svg+xml") ""
     maybeWrite t = \case "" -> return (); f -> writeFile f t
     maybeRead = \case "" -> Nothing; f -> Just $ readFile f
 
