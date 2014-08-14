@@ -14,7 +14,7 @@ import qualified Data.Graph.Inductive.Graph as Graph (empty)
 import qualified Data.Graph.Inductive.Tree as Graph
 
 import BasicPrelude hiding (mapM, union, on)
-import Data.Default
+import Data.Default.Generics
 import Data.Map ((!), fromList)
 import Data.Traversable (mapM)
 import Graphics.UI.Gtk

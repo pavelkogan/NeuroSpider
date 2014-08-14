@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module NeuroSpider.Graph
@@ -14,15 +15,17 @@ module NeuroSpider.Graph
   ) where
 
 import BasicPrelude hiding (try)
-import Data.Default
+import Data.Default.Generics
 import Data.Graph.Inductive.Graph
 import Data.Map (fromList, toList, adjust)
 import Data.Text (pack)
+import GHC.Generics
 import Text.Parsec
 import Text.Parsec.Text ()
 
 newtype Graph' a b = Graph' { unGraph :: ([LNode a], [LEdge b]) }
-  deriving (Show, Read)
+  deriving (Show, Read, Generic)
+instance Default (Graph' a b)
 
 showGraph :: (Graph gr, Show a, Show b) => gr a b -> Text
 showGraph = show . Graph' . (labNodes &&& labEdges)
@@ -31,7 +34,6 @@ readGraph :: (Graph gr, Read a, Read b) => Text -> gr a b
 readGraph = uncurry mkGraph . unGraph . read
 
 type GraphElement = Either Edge Node
-instance Default GraphElement where def = Left def
 
 data GraphEvent = NodeClick Node | EdgeClick Edge
   deriving (Eq, Show)

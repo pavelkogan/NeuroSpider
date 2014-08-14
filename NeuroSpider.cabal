@@ -31,7 +31,7 @@ executable NeuroSpider
                        mtl,
                        fgl,
                        text,
-                       data-default,
+                       data-default-generics,
                        strict,
                        safe,
                        graphviz,
