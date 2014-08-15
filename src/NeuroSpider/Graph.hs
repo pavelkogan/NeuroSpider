@@ -1,7 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module NeuroSpider.Graph
   ( parseGraphEvent
