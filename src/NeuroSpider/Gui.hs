@@ -1,4 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module NeuroSpider.Gui (runGUI) where
 
@@ -102,7 +103,7 @@ eventNetwork (Widgets e1 tb1 tb2 wv od actions) = do
   reactimate $ loadWv wv <$> graph
   let clicks = unions $
                  (action !) <$> [CreateNode, CreateEdge, Rename]
-  reactimate $ pure (entrySetText e1 (""::Text)) <@ clicks
+  reactimate $ pure (entrySetText e1 "") <@ clicks
   let sel1lab = getLabel <$> graphB <*> selected
   let sel2lab = getLabel <$> graphB <*> selected2
   sink tb1 [textBufferText :== maybe "" show <$> sel1lab]

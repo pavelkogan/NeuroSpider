@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+
 module NeuroSpider.UiManager
   ( setupMenuToolBars
   , UiAction(..)
@@ -104,7 +106,7 @@ setupMenuToolBars :: (WindowClass w, BoxClass b)
 setupMenuToolBars window box activations = do
 
   stockIds <- stockListIds
-  actiongroup <- actionGroupNew ("actiongroup"::Text)
+  actiongroup <- actionGroupNew "actiongroup"
   actions <- forM [minBound..maxBound] $ \a -> do
     let stock' = if stock a `elem` stockIds then Just (stock a) else Nothing
     action <- actionNew (show a) (name a) Nothing stock'
@@ -121,8 +123,8 @@ setupMenuToolBars window box activations = do
   accelgroup <- uiManagerGetAccelGroup uimanager
   windowAddAccelGroup window accelgroup
 
-  menubar' <- uiManagerGetWidget uimanager ("ui/menubar"::Text)
-  toolbar' <- uiManagerGetWidget uimanager ("ui/toolbar"::Text)
+  menubar' <- uiManagerGetWidget uimanager "ui/menubar"
+  toolbar' <- uiManagerGetWidget uimanager "ui/toolbar"
   let menubar = maybe (error "menubar setup") castToMenuBar menubar'
   let toolbar = maybe (error "toolbar setup") castToToolbar toolbar'
   boxPackStart box menubar PackNatural 0

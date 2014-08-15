@@ -48,4 +48,5 @@ executable NeuroSpider
                        OverloadedStrings
                        LambdaCase
                        TupleSections
+                       ExtendedDefaultRules
 

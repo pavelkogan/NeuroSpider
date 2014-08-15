@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module NeuroSpider.Gtk
   ( withBuilder
@@ -38,7 +39,7 @@ instance FromBuilder ScrolledWindow where castTo = castToScrolledWindow
 withBuilder :: String -> (Builder -> IO a) -> IO Window
 withBuilder bFile action = do
   builder <- getBuilder bFile
-  window <- builderGetObject builder castToWindow ("window1"::String)
+  window <- builderGetObject builder castToWindow "window1"
   _ <- action builder
   return window
 
