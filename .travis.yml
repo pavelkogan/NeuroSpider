@@ -6,6 +6,8 @@ ghc:
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libglib2.0-dev libcairo2-dev libpango1.0-dev libgtk2.0-dev
+  - cabal install cabal-install
+  - cabal install alex happy
   - cabal install gtk2hs-buildtools
   - git clone https://github.com/pavelkogan/reactive-banana-gtk.git
   - cabal sandbox init
