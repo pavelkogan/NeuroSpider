@@ -1,1 +1,5 @@
 language: haskell
+before_install:
+  - git clone https://github.com/pavelkogan/reactive-banana-gtk.git
+  - cabal sandbox init
+  - cabal sandbox add-source ./reactive-banana-gtk/
