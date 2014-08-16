@@ -1,12 +1,8 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module NeuroSpider.Gtk
   ( withBuilder
   , fromBuilder
-  , ($->)
-  , (*->)
   , doGUI
   ) where
 
@@ -16,15 +12,20 @@ import BasicPrelude hiding (on)
 import Control.Monad.Trans.Reader
 import Graphics.UI.Gtk
 
+newtype GetFromBuilder a = GetFromBuilder
+  { getFromBuilder :: ReaderT Builder IO a
+  } deriving (Functor, Applicative, Monad, MonadIO)
+
+instance FromBuilder a => IsString (GetFromBuilder a) where
+  fromString = GetFromBuilder . ReaderT . flip getFrom
+
+fromBuilder :: Builder -> GetFromBuilder a -> IO a
+fromBuilder = flip $ runReaderT . getFromBuilder
+
 class GObjectClass a => FromBuilder a where
   castTo :: GObject -> a
   getFrom :: Builder -> String -> IO a
   getFrom = flip builderGetObject castTo
-  getListFrom :: Builder -> [String] -> IO [a]
-  getListFrom = mapM . getFrom
-
-instance FromBuilder a => IsString (Builder -> IO a) where
-  fromString = flip getFrom
 
 instance FromBuilder Button    where castTo = castToButton
 instance FromBuilder Entry     where castTo = castToEntry
@@ -39,7 +40,7 @@ instance FromBuilder ScrolledWindow where castTo = castToScrolledWindow
 withBuilder :: String -> (Builder -> IO a) -> IO Window
 withBuilder bFile action = do
   builder <- getBuilder bFile
-  window <- builderGetObject builder castToWindow "window1"
+  window <- getFrom builder "window1"
   _ <- action builder
   return window
 
@@ -60,17 +61,4 @@ getBuilder bFile = do
   bString <- readFile =<< getDataFileName bFile
   builderAddFromString builder bString
   return builder
-
-fromBuilder :: Builder -> ReaderT Builder IO a -> IO a
-fromBuilder b struct = runReaderT struct b
-
-($->) :: (a -> b)
-      -> (Builder -> IO a)
-      -> ReaderT Builder IO b
-f $-> x = f <$> ReaderT x
-
-(*->) :: ReaderT Builder IO (a -> b)
-      -> (Builder -> IO a)
-      -> ReaderT Builder IO b
-f *-> x = f <*> ReaderT x
 

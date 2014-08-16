@@ -35,24 +35,6 @@ data Widgets = Widgets
                  FileChooserDialog
                  (Map UiAction Action)
 
-setUpGUI :: Builder -> IO Widgets
-setUpGUI builder = do
-  widgets <- fromBuilder builder $ Widgets
-    $-> "entry1"
-    *-> "textbuffer1"
-    *-> "textbuffer2"
-  sw <- "scrolledwindow1" builder :: IO ScrolledWindow
-  vb <- "vbox1" builder :: IO VBox
-  wi <- "window1" builder :: IO Window
-  wv <- webViewNew
-  set sw [ containerChild := wv ]
-  od <- openDialog wi
-  actions <- setupMenuToolBars wi vb $ fromList
-    [ (About, aboutDialog)
-    , (Open, runDialog od)
-    ]
-  return $ widgets wv od actions
-
 runGUI :: IO ()
 runGUI = doGUI $ withBuilder "main.glade" $ \builder -> do
   widgets <- setUpGUI builder
@@ -117,6 +99,21 @@ eventNetwork (Widgets e1 tb1 tb2 wv od actions) = do
       webViewLoadString webview svg (Just "image/svg+xml") ""
     maybeWrite t = \case "" -> return (); f -> writeFile f t
     maybeRead = \case "" -> Nothing; f -> Just $ readFile f
+
+setUpGUI :: Builder -> IO Widgets
+setUpGUI = flip fromBuilder $ do
+  sw <- "scrolledwindow1"
+  wi <- "window1"
+  vb <- "vbox1"
+  wv <- liftIO webViewNew
+  od <- liftIO $ openDialog (wi::Window)
+  liftIO $ set (sw::ScrolledWindow) [ containerChild := wv ]
+  actions <- liftIO $ setupMenuToolBars wi (vb::VBox) $ fromList
+    [ (About, aboutDialog)
+    , (Open, runDialog od)
+    ]
+  Widgets <$> "entry1" <*> "textbuffer1" <*> "textbuffer2"
+          <*> return wv <*> return od <*> return actions
 
 aboutDialog :: IO ()
 aboutDialog = do
