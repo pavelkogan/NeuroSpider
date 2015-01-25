@@ -50,6 +50,12 @@ eventNetwork (Widgets e1 tb1 tb2 wv od actions) = do
       Just u  -> f u >> return True
     ) wv navigationPolicyDecisionRequested
   action <- mapM (`event0` actionActivated) actions
+  fileChoice <- fmap filterJust $ monitorG od response $ flip $ \case
+    ResponseAccept -> \c -> do
+      f <- fileChooserGetFilename c
+      a <- fileChooserGetAction c
+      return $ (a,) <$> f
+    _              -> const $ return Nothing
   fileString <- fmap filterJust $ monitorG od response $ flip $ \case
     ResponseAccept -> fileChooserGetFilename
     _              -> const $ return Nothing
@@ -81,7 +87,7 @@ eventNetwork (Widgets e1 tb1 tb2 wv od actions) = do
             (const <$> newNodeStart) `union` (pure (+1) <@ createNode)
   let graphB = stepper Graph.empty graph
   let graphS = showGraph <$> graphB
-  reactimate $ maybeWrite <$> graphS <*> file <@ action!Save
+  reactimate $ save <$> graphS <*> file <@ action!Save
   reactimate $ putStrLn <$> graphS <@ action!Show
   reactimate $ loadWv wv <$> graph
   let clicks = unions $
@@ -97,7 +103,7 @@ eventNetwork (Widgets e1 tb1 tb2 wv od actions) = do
       js <- readFile =<< getDataFileName "main.js"
       svg <- return . transformSvg css js =<< graphToSvg x
       webViewLoadString webview svg (Just "image/svg+xml") ""
-    maybeWrite t = \case "" -> return (); f -> writeFile f t
+    save t = \case "" -> actionActivate (actions!SaveAs); f -> writeFile f t
     maybeRead = \case "" -> Nothing; f -> Just $ readFile f
 
 setUpGUI :: Builder -> IO Widgets
@@ -125,7 +131,7 @@ aboutDialog = do
 openDialog :: Window -> IO FileChooserDialog
 openDialog parent = do
   dialog <- fileChooserDialogNew Nothing (Just parent) FileChooserActionOpen
-              [(stockCancel,ResponseCancel),(stockOpen,ResponseAccept)]
+              [(stockCancel,ResponseCancel),(stockOk,ResponseAccept)]
   windowSetPosition dialog WinPosCenterOnParent
   return dialog
 
