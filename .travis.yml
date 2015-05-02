@@ -14,11 +14,17 @@ addons:
 
 before_install:
   - cabal update
-  - cabal install stackage-cli gtk2hs-buildtools
+  - cabal install stackage-cli
   - stackage-sandbox init lts-$LTS_VER
+  - export PATH=$HOME/.stackage/sandboxes/ghc-$(ghc_find 7.8)/lts-$LTS_VER/bin/:$PATH
+  - cabal install gtk2hs-buildtools
   - git clone https://github.com/pavelkogan/reactive-banana-gtk.git
   - cabal sandbox add-source ./reactive-banana-gtk/
 
 cache:
   directories:
     - $HOME/.stackage/sandboxes
+    - $HOME/.ghc
+    - $HOME/.cabal
+before_cache:
+  - rm -f $HOME/.cabal/packages/hackage.haskell.org/00-index.*
