@@ -1,5 +1,8 @@
 name:                NeuroSpider
 version:             0
+synopsis:            Graph-based SRS
+description:         A tool to explore and memorise information in graph form
+category:            Application
 license:             BSD3
 license-file:        LICENSE
 author:              Pavel Kogan
@@ -8,6 +11,10 @@ build-type:          Simple
 cabal-version:       >=1.10
 data-dir:            data
 data-files:          *.glade *.css *.js
+
+source-repository head
+  type:                git
+  location:            git://github.com/pavelkogan/NeuroSpider
 
 executable NeuroSpider
   main-is:             Main.hs
