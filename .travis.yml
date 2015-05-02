@@ -1,7 +1,5 @@
-language: haskell
-ghc: 7.8
 env:
-  - LTS_VER=2.5
+  - CABALVER=1.18 GHCVER=7.8.4 LTSVER=2.5 ALEXVER=3.14 HAPPYVER=19.5
 sudo: false
 branches:
   only:
@@ -9,22 +7,35 @@ branches:
     - travis
 addons:
   apt:
+    sources:
+      - hvr-ghc
     packages:
       - libwebkitgtk-dev
+      - ghc-7.8.4
+      - cabal-install-1.18
+      - alex-3.14
+      - happy-19.5
 
 before_install:
-  - cabal update
-  - cabal install stackage-cli
-  - stackage-sandbox init lts-$LTS_VER
-  - export PATH=$HOME/.stackage/sandboxes/ghc-$(ghc_find 7.8)/lts-$LTS_VER/bin/:$PATH
+  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:/opt/alex/$ALEXVER/bin:/opt/happy/$HAPPYVER/bin:$PATH
+  - travis_retry cabal update
+  - travis_retry wget http://www.stackage.org/lts/$LTSVER/cabal.config
+  - cabal sandbox init --sandbox $HOME/cabal.sandbox
+  - export PATH=$(pwd)/.cabal-sandbox/bin:$PATH
   - cabal install gtk2hs-buildtools
   - git clone https://github.com/pavelkogan/reactive-banana-gtk.git
   - cabal sandbox add-source ./reactive-banana-gtk/
 
+install:
+  - cabal install --only-dependencies --enable-tests --enable-benchmarks
+
+script:
+  - cabal configure --enable-tests --enable-benchmarks -v2
+  - cabal build
+  - cabal test
+  - cabal check
+  - cabal sdist
+
 cache:
   directories:
-    - $HOME/.stackage/sandboxes
-    - $HOME/.ghc
-    - $HOME/.cabal
-before_cache:
-  - rm -f $HOME/.cabal/packages/hackage.haskell.org/00-index.*
+    - $HOME/cabal.sandbox
