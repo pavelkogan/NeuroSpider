@@ -21,8 +21,8 @@ before_install:
   - travis_retry cabal update
   - travis_retry wget http://www.stackage.org/lts/$LTSVER/cabal.config
   - cabal sandbox init --sandbox $HOME/cabal.sandbox
-  - export PATH=$HOME/cabal-sandbox/bin:$PATH
-  - cabal install gtk2hs-buildtools
+  - export PATH=$HOME/cabal.sandbox/bin:$PATH
+  - gtk2hsC2hs -v || cabal install gtk2hs-buildtools
   - git clone https://github.com/pavelkogan/reactive-banana-gtk.git
   - cabal sandbox add-source ./reactive-banana-gtk/
 
