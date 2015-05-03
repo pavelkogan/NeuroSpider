@@ -51,4 +51,4 @@ deploy:
   file: $TRAVIS_TAG.tar.gz
   skip_cleanup: true
   on:
-    tags: true
+    all_branches: true
