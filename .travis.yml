@@ -17,6 +17,7 @@ addons:
       - happy-1.19.5
 
 before_install:
+  - export GIT_TAG=$(git describe --tags --exact-match || true)
   - env
   - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:/opt/alex/$ALEXVER/bin:/opt/happy/$HAPPYVER/bin:$PATH
   - travis_retry cabal update
@@ -43,12 +44,14 @@ cache:
 
 before_deploy:
   - cabal copy --destdir=dist/image
-  - tar czvf $TRAVIS_TAG.tar.gz -C dist/image usr
+  - export DEPLOY_TAR=neurospider-$GIT_TAG.tar.gz
+  - tar czvf $DEPLOY_TAR -C dist/image usr
 deploy:
   provider: releases
   api_key:
     secure: Qm2v/za78wzzXqjPWBE00mQQ2EYoekummmF/Ix2pR/APxI1H1MzM7DWaTZGFKDFOg/Lt4AVa5RXSYtgRpzpUgsT74KXe6cs+biX6WbO+5kNyRkYTv7f485yXbCJdbqgn9Rk65SDfPLbJmVZkUVY4u7fa+jlPMikkYd7BeaCTVf0=
-  file: $TRAVIS_TAG.tar.gz
+  file: $DEPLOY_TAR
   skip_cleanup: true
   on:
     all_branches: true
+    condition: $GIT_TAG
