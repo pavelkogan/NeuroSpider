@@ -30,7 +30,7 @@ install:
   - cabal install --only-dependencies --enable-tests --enable-benchmarks
 
 script:
-  - cabal configure --enable-tests --enable-benchmarks -v2
+  - cabal configure --enable-tests --enable-benchmarks -v2 --prefix=/usr/local
   - cabal build
   - cabal test
   - cabal check
@@ -39,3 +39,15 @@ script:
 cache:
   directories:
     - $HOME/cabal.sandbox
+
+before_deploy:
+  - cabal copy --destdir=dist/image
+  - tar czvf $TRAVIS_TAG.tar.gz -C dist/image usr
+deploy:
+  provider: releases
+  api_key:
+    secure: Qm2v/za78wzzXqjPWBE00mQQ2EYoekummmF/Ix2pR/APxI1H1MzM7DWaTZGFKDFOg/Lt4AVa5RXSYtgRpzpUgsT74KXe6cs+biX6WbO+5kNyRkYTv7f485yXbCJdbqgn9Rk65SDfPLbJmVZkUVY4u7fa+jlPMikkYd7BeaCTVf0=
+  file: $TRAVIS_TAG.tar.gz
+  skip_cleanup: true
+  on:
+    tags: true
